@@ -41,22 +41,32 @@ def create_youtube_playlist(youtube, title, description):
             "privacyStatus": "private"
         }
     }
-
-    response = youtube.playlists().insert(
-        part="snippet,status",
-        body=request_body
-    ).execute()
+    try:
+        response = youtube.playlists().insert(
+            part="snippet,status",
+            body=request_body
+        ).execute()
+    except Exception as e:
+        if e.resp.status == 403:
+            print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+        exit()
 
     return response["id"]
 
 # Search for song on YouTube and return video ID
 def search_youtube_video(youtube, query):
-    response = youtube.search().list(
-        part="snippet",
-        q=query,
-        maxResults=1,
-        type="video"
-    ).execute()
+    try:
+        response = youtube.search().list(
+            part="snippet",
+            q=query,
+            maxResults=1,
+            type="video"
+        ).execute()
+    except Exception as e:
+        if e.resp.status == 403:
+            print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+            exit()
+        print("error")
 
     items = response.get("items", [])
     if not items:
@@ -67,8 +77,8 @@ def search_youtube_video(youtube, query):
 
 # Add video to YouTube playlist
 def add_video_to_playlist(youtube, id, video_id):
-    count = 0
-    while count!= 20:
+    reps = 0
+    while reps!= 20:
         try:
             youtube.playlistItems().insert(
                 part="snippet",
@@ -83,13 +93,13 @@ def add_video_to_playlist(youtube, id, video_id):
                 }
             ).execute()
             return
-        except HttpError as e:
+        except Error as e:
+            if e.resp.status == 403:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+                exit()
             print(f"Retry for {video_id} due to error.")
-            count+=1;
+            reps+=1;
             time.sleep(2)
-
-
-
 
 
 # Get track list from Spotify playlist
@@ -105,7 +115,6 @@ def get_spotify_tracks(id, start):
     results = sp.playlist_tracks(id)
     tracks = []
     num_items=0
-    count=0
     items = results["items"]
     for item in items[start:]:
         num_items +=1
@@ -115,9 +124,11 @@ def get_spotify_tracks(id, start):
         name = track["name"]
         artist = track["artists"][0]["name"]
         tracks.append(f"{name} {artist}")
-        count += 1
-    return tracks, num_items, count
+    return tracks, num_items
 
+# globals
+count = 0
+on_song = 0
 # Main
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer Spotify playlist to YouTube Music")
@@ -125,6 +136,7 @@ if __name__ == "__main__":
     parser.add_argument("--name", required=True, help="New YouTube Playlist Name")
     parser.add_argument("--starting-track", required=True, help="Track to start at")
     args = parser.parse_args()
+    on_song = int(args.starting_track)
 
     youtube = get_youtube_service()
 
@@ -132,14 +144,15 @@ if __name__ == "__main__":
     id = create_youtube_playlist(youtube, args.name, "Transferred from Spotify")
 
     tracks = get_spotify_tracks(args.id, int(args.starting_track))
-    
     for track in tracks[0]:
         video_id = search_youtube_video(youtube, track)
         if video_id:
             add_video_to_playlist(youtube, id, video_id)
             print(f"Added: {track}")
+            count += 1
+            on_song += 1
         else:
             print(f"Not found: {track}")
     
 
-    print(f"Transfer complete! Number of songs added is {tracks[2]}.")
+    # print(f"Transfer complete! Number of songs added is {count} so next time running start on track {on_song}.")
