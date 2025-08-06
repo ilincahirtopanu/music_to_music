@@ -66,7 +66,7 @@ def search_youtube_video(youtube, query):
 
 
 # Add video to YouTube playlist
-def add_video_to_playlist(youtube, playlist_id, video_id):
+def add_video_to_playlist(youtube, id, video_id):
     count = 0
     while count!= 20:
         try:
@@ -74,7 +74,7 @@ def add_video_to_playlist(youtube, playlist_id, video_id):
                 part="snippet",
                 body={
                     "snippet": {
-                        "playlistId": playlist_id,
+                        "playlistId": id,
                         "resourceId": {
                             "kind": "youtube#video",
                             "videoId": video_id
@@ -93,7 +93,7 @@ def add_video_to_playlist(youtube, playlist_id, video_id):
 
 
 # Get track list from Spotify playlist
-def get_spotify_tracks(playlist_id):
+def get_spotify_tracks(id, start):
     sp = spotipy.Spotify(
     auth_manager=SpotifyOAuth(
         client_id = os.getenv("SPOTIFY_CLIENT_ID"),
@@ -102,38 +102,44 @@ def get_spotify_tracks(playlist_id):
         scope = "user-library-read"
         )
     )
-    results = sp.playlist_tracks(playlist_id)
+    results = sp.playlist_tracks(id)
     tracks = []
     num_items=0
-    for item in results["items"]:
+    count=0
+    items = results["items"]
+    for item in items[start:]:
         num_items +=1
         track = item["track"]
+        if track is None:
+            continue;
         name = track["name"]
         artist = track["artists"][0]["name"]
         tracks.append(f"{name} {artist}")
-    return tracks, num_items
+        count += 1
+    return tracks, num_items, count
 
 # Main
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Transfer Spotify playlist to YouTube Music")
-    parser.add_argument("--playlist-id", required=True, help="Spotify Playlist ID")
-    parser.add_argument("--playlist-name", required=True, help="New YouTube Playlist Name")
+    parser.add_argument("--id", required=True, help="Spotify Playlist ID")
+    parser.add_argument("--name", required=True, help="New YouTube Playlist Name")
+    parser.add_argument("--starting-track", required=True, help="Track to start at")
     args = parser.parse_args()
 
     youtube = get_youtube_service()
 
-    print(f"Creating YouTube playlist: {args.playlist_name}")
-    playlist_id = create_youtube_playlist(youtube, args.playlist_name, "Transferred from Spotify")
+    print(f"Creating YouTube playlist: {args.name} starting on track {args.starting_track}.")
+    id = create_youtube_playlist(youtube, args.name, "Transferred from Spotify")
 
-    tracks = get_spotify_tracks(args.playlist_id)
+    tracks = get_spotify_tracks(args.id, int(args.starting_track))
     
-
     for track in tracks[0]:
         video_id = search_youtube_video(youtube, track)
         if video_id:
-            add_video_to_playlist(youtube, playlist_id, video_id)
+            add_video_to_playlist(youtube, id, video_id)
             print(f"Added: {track}")
         else:
             print(f"Not found: {track}")
+    
 
-    print("Transfer complete!")
+    print(f"Transfer complete! Number of songs added is {tracks[2]}.")
