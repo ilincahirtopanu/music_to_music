@@ -31,11 +31,11 @@ def get_youtube_service():
     return youtube
 
 # Create playlist on YouTube
-def create_youtube_playlist(youtube, title, description):
+def create_youtube_playlist(youtube, title):
     request_body = {
         "snippet": {
             "title": title,
-            "description": description
+            "description": "Transferred from Spotify"
         },
         "status": {
             "privacyStatus": "private"
@@ -48,10 +48,40 @@ def create_youtube_playlist(youtube, title, description):
         ).execute()
     except Exception as e:
         if e.resp.status == 403:
-            print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+            if count == 0:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
+            else:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")          
         exit()
 
     return response["id"]
+
+#finds the playlist id in the library already and returns it
+def find_existing_playlist(youtube, playlist_name):
+    try:
+        response = youtube.playlists().list(
+            part="snippet,contentDetails",
+            maxResults=10000,
+            mine=True
+        ).execute()
+    except Exception as e:
+        if e.resp.status == 403:
+            if count == 0:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
+            else:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")  
+            exit()
+        print("error")
+        exit()
+    
+    items = response.get("items", [])
+    if not items:
+        return None
+    for item in items:
+        title = item["snippet"]["title"]
+        if title.lower() == playlist_name.lower():
+            return item["id"]   
+    
 
 # Search for song on YouTube and return video ID
 def search_youtube_video(youtube, query):
@@ -64,9 +94,13 @@ def search_youtube_video(youtube, query):
         ).execute()
     except Exception as e:
         if e.resp.status == 403:
-            print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+            if count == 0:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
+            else:
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")  
             exit()
         print("error")
+        exit()
 
     items = response.get("items", [])
     if not items:
@@ -95,7 +129,10 @@ def add_video_to_playlist(youtube, id, video_id):
             return
         except Error as e:
             if e.resp.status == 403:
-                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+                if count == 0:
+                    print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
+                else:
+                    print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
                 exit()
             print(f"Retry for {video_id} due to error.")
             reps+=1;
@@ -112,11 +149,11 @@ def get_spotify_tracks(id, start):
         scope = "user-library-read"
         )
     )
-    results = sp.playlist_tracks(id)
+    results = sp.playlist_tracks(id, offset=start)
     tracks = []
     num_items=0
     items = results["items"]
-    for item in items[start:]:
+    for item in items:
         num_items +=1
         track = item["track"]
         if track is None:
@@ -124,24 +161,37 @@ def get_spotify_tracks(id, start):
         name = track["name"]
         artist = track["artists"][0]["name"]
         tracks.append(f"{name} {artist}")
+    # if num_items < on_song:
+    #     print("error: the starting track you selected doesn't exist in this playlist")
+    #     exit()
     return tracks, num_items
 
 # globals
 count = 0
 on_song = 0
-# Main
-if __name__ == "__main__":
+
+def main():
+    global count
+    global on_song
+    #parse arguments into variables
     parser = argparse.ArgumentParser(description="Transfer Spotify playlist to YouTube Music")
     parser.add_argument("--id", required=True, help="Spotify Playlist ID")
     parser.add_argument("--name", required=True, help="New YouTube Playlist Name")
     parser.add_argument("--starting-track", required=True, help="Track to start at")
+    parser.add_argument("--exists", required=False, help="1 if you want to add to an existing playlist on youtube")
     args = parser.parse_args()
+
     on_song = int(args.starting_track)
+
 
     youtube = get_youtube_service()
 
-    print(f"Creating YouTube playlist: {args.name} starting on track {args.starting_track}.")
-    id = create_youtube_playlist(youtube, args.name, "Transferred from Spotify")
+    if args.exists == "1": #1 if im saying add to existing playlist
+        id = find_existing_playlist(youtube, args.name)
+        print(f"Found Youtube playlist: {args.name}")
+    else:
+        print(f"Creating YouTube playlist: {args.name} starting on track {args.starting_track}.")
+        id = create_youtube_playlist(youtube, args.name)   
 
     tracks = get_spotify_tracks(args.id, int(args.starting_track))
     for track in tracks[0]:
@@ -153,6 +203,9 @@ if __name__ == "__main__":
             on_song += 1
         else:
             print(f"Not found: {track}")
-    
 
     # print(f"Transfer complete! Number of songs added is {count} so next time running start on track {on_song}.")
+    print(f"Transfer complete! Number of songs added is {count}!")
+
+if __name__ == "__main__":
+    main()
