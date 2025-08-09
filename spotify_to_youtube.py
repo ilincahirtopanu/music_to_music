@@ -127,7 +127,7 @@ def add_video_to_playlist(youtube, id, video_id):
                 }
             ).execute()
             return
-        except Error as e:
+        except Exception as e:
             if e.resp.status == 403:
                 if count == 0:
                     print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
