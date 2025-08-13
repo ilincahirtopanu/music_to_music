@@ -51,7 +51,7 @@ def create_youtube_playlist(youtube, title):
             if count == 0:
                 print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
             else:
-                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")          
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")          
         exit()
 
     return response["id"]
@@ -69,7 +69,7 @@ def find_existing_playlist(youtube, playlist_name):
             if count == 0:
                 print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
             else:
-                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")  
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")  
             exit()
         print("error")
         exit()
@@ -97,7 +97,7 @@ def search_youtube_video(youtube, query):
             if count == 0:
                 print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
             else:
-                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")  
+                print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")  
             exit()
         print("error")
         exit()
@@ -132,7 +132,7 @@ def add_video_to_playlist(youtube, id, video_id):
                 if count == 0:
                     print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
                 else:
-                    print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song + 1}.")   
+                    print(f"Reached end of quota. Number of songs added is {count} so next time running start on track {on_song}.")   
                 exit()
             print(f"Retry for {video_id} due to error.")
             reps+=1;
