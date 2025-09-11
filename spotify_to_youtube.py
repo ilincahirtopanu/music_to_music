@@ -11,10 +11,10 @@ from spotipy.oauth2 import SpotifyOAuth
 
 load_dotenv()
 
-# YouTube API Scopes
+# youtube API scopes
 YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube"]
 
-# Authenticate YouTube and return service object
+# connects to youtube/google
 def get_youtube_service():
     flow = InstalledAppFlow.from_client_config({
         "installed": {
@@ -30,7 +30,7 @@ def get_youtube_service():
     youtube = build("youtube", "v3", credentials=credentials)
     return youtube
 
-# Create playlist on YouTube
+# this creates youtube playlist using your name
 def create_youtube_playlist(youtube, title):
     request_body = {
         "snippet": {
@@ -83,7 +83,8 @@ def find_existing_playlist(youtube, playlist_name):
             return item["id"]   
     
 
-# Search for song on YouTube and return video ID
+# searches for the youtube song and returns the video id
+
 def search_youtube_video(youtube, query):
     try:
         response = youtube.search().list(
@@ -109,7 +110,7 @@ def search_youtube_video(youtube, query):
 
 
 
-# Add video to YouTube playlist
+# adds video id to the playlist
 def add_video_to_playlist(youtube, id, video_id):
     reps = 0
     while reps!= 20:
@@ -139,7 +140,7 @@ def add_video_to_playlist(youtube, id, video_id):
             time.sleep(2)
 
 
-# Get track list from Spotify playlist
+# gets all the tracks from spotify playlist
 def get_spotify_tracks(id, start):
     sp = spotipy.Spotify(
     auth_manager=SpotifyOAuth(
@@ -204,7 +205,6 @@ def main():
         else:
             print(f"Not found: {track}")
 
-    # print(f"Transfer complete! Number of songs added is {count} so next time running start on track {on_song}.")
     print(f"Transfer complete! Number of songs added is {count}!")
 
 if __name__ == "__main__":
