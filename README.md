@@ -53,19 +53,12 @@ paste your client id to the right of YT_CLIENT_ID=
 
 paste your client secret to the right of YT_CLIENT_SECRET=
 
+don't forget to go to audience and add yourself as a test user (or you won't have access to it).
+
 **almost done!**
 
-# 4. create a file called .gitignore 
-paste the next two lines within it:
 
-    .env
-    .cache
-
-this means that your private client id's and access tokens will not be published on github if you were to try to save any code (please create a branch if you're going to do so).
-
-!!!!
-
-# 5. to run:
+# 4. to run:
 
 assuming you're already in an active virtual environment, this is the command line format to run code in the terminal.
 
