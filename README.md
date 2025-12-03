@@ -53,7 +53,15 @@ paste your client id to the right of YT_CLIENT_ID=
 
 paste your client secret to the right of YT_CLIENT_SECRET=
 
-don't forget to go to audience and add yourself as a test user (or you won't have access to it).
+#### **Add yourself as allowed user**
+
+Go to Audience in the tabs on the left.
+Add your google email associated with the youtube account as a test user, or you won't be able to run it.
+
+Feel free to add more than one youtube account on this. Whichever you log in on will be the youtube account used.
+
+
+Click save
 
 **almost done!**
 
